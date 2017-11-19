@@ -2,6 +2,10 @@
 
 # bash completion for Node Version Manager (NVM)
 
+if ! nvm &> /dev/null; then
+    return
+fi
+
 __nvm_generate_completion()
 {
   declare current_word
@@ -17,10 +21,13 @@ __nvm_commands ()
 
   current_word="${COMP_WORDS[COMP_CWORD]}"
 
-  COMMANDS='\
-    help install uninstall use run\
-    ls ls-remote list list-remote deactivate\
-    alias unalias copy-packages clear-cache version'
+  COMMANDS='
+    help install uninstall use run exec
+    alias unalias reinstall-packages
+    current list ls list-remote ls-remote
+    install-latest-npm
+    cache deactivate unload
+    version version-remote which'
 
     if [ ${#COMP_WORDS[@]} == 4 ]; then
 
@@ -54,10 +61,10 @@ __nvm_aliases ()
 {
   declare aliases
   aliases=""
-  if [ -d $NVM_DIR/alias ]; then
-    aliases="`cd $NVM_DIR/alias && ls`"
+  if [ -d "$NVM_DIR/alias" ]; then
+    aliases="$(cd "$NVM_DIR/alias" && command find "$PWD" -type f | command sed "s:$PWD/::")"
   fi
-  echo "${aliases}"
+  echo "${aliases} node stable unstable iojs"
 }
 
 __nvm_alias ()
@@ -71,7 +78,7 @@ __nvm ()
   previous_word="${COMP_WORDS[COMP_CWORD-1]}"
 
   case "$previous_word" in
-  use|run|ls|list|uninstall) __nvm_installed_nodes ;;
+  use|run|exec|ls|list|uninstall) __nvm_installed_nodes ;;
   alias|unalias)  __nvm_alias ;;
   *)              __nvm_commands ;;
   esac
@@ -79,11 +86,12 @@ __nvm ()
   return 0
 }
 
-# complete is a bash builtin, but recent versions of ZSH come with a function 
-# called bashcompinit that will create a complete in ZSH. If the user is in 
+# complete is a bash builtin, but recent versions of ZSH come with a function
+# called bashcompinit that will create a complete in ZSH. If the user is in
 # ZSH, load and run bashcompinit before calling the complete function.
 if [[ -n ${ZSH_VERSION-} ]]; then
-	autoload -U +X bashcompinit && bashcompinit
+  autoload -U +X bashcompinit && bashcompinit
 fi
 
-complete -o default -o nospace -F __nvm nvm
+complete -o default -F __nvm nvm
+
